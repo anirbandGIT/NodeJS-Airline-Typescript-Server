@@ -1,4 +1,4 @@
-export default interface Airline {
+export default interface IAirline {
   company: String;
   flightId: String;
   PNR: String;

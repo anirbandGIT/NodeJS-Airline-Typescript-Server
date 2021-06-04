@@ -1,4 +1,5 @@
 import * as express from "express";
+import * as mongoose from "mongoose";
 
 class App {
   public app: express.Application;
@@ -8,6 +9,7 @@ class App {
     this.app = express(); // const app = express();
     this.port = port;
 
+    this.connectToTheDatabase();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
   }
@@ -34,9 +36,18 @@ class App {
     });
   }
 
+  private connectToTheDatabase() {
+    const { MONGO_USER, MONGO_PASSWORD, MONGO_PATH } = process.env;
+    // mongodb+srv://dev1:<password>@dev.eavd9.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+    mongoose.connect(
+      `mongodb+srv://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`,
+      { useNewUrlParser: true, useUnifiedTopology: true } // resolve deprecations
+    );
+  }
+
   public listen() {
     this.app.listen(this.port, () => {
-      console.log(`App listening on the port ${this.port}`);
+      console.log(`Server is up, listening on port ${this.port}`);
     });
   }
 }
