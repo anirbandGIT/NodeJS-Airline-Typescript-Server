@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "sourceMap": true,
-    "target": "es2017",
+    "target": "es5",
+    "module": "commonjs",
+    "lib": ["es6"],
     "outDir": "./dist",
     "baseUrl": "./src",
     "moduleResolution": "node"

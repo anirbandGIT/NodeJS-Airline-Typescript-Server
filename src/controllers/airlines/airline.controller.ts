@@ -2,6 +2,8 @@ import * as express from "express";
 import IAirline from "../../interfaces/airlines/airline.interface";
 import AirlineModel from "../../models/airlines/airline.model";
 
+import HttpException from "../../helpers/exceptions/http.exception";
+
 class AirlineController {
   private airline = AirlineModel;
 
@@ -27,25 +29,67 @@ class AirlineController {
   }
 
   public intializeRoutes() {
-    this.router.get(this.path, this.getAllAirlines);
+    this.router.get(this.path, this.getAirlineEntries);
+    this.router.get(`${this.path}/paginated`, this.getPaginatedAirlineEntries);
     this.router.get(`${this.path}/:id`, this.getAirlineById);
     this.router.post(this.path, this.createAirlineEntry);
     this.router.patch(`${this.path}/:id`, this.modifyAirlineEntry);
     this.router.delete(`${this.path}/:id`, this.deleteAirlineEntry);
   }
 
-  public getAllAirlines = async (
+  public getAirlineEntries = async (
     request: express.Request,
-    response: express.Response
+    response: express.Response,
+    next: express.NextFunction
   ) => {
     //  MOCK
     // response.status(200);
     // response.send(this.airlines);
+    try {
+      const fetchedAirlineData = await this.airline.find();
+      if (fetchedAirlineData.length !== 0) {
+        response.status(200);
+        response.json({
+          data: fetchedAirlineData,
+        });
+      } else {
+        next(new HttpException(404, "Airline data was not found"));
+      }
+    } catch (error) {
+      response.status(404);
+      response.send(error);
+    }
+  };
+
+  public getPaginatedAirlineEntries = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
+    let page: number = request.query.page
+      ? Number.parseInt(request.query.page.toString())
+      : 1;
+    let limit: number = request.query.limit
+      ? Number.parseInt(request.query.limit.toString())
+      : 10;
+    let skip: number = (page - 1) * limit; // calculated
 
     try {
       const fetchedAirlineData = await this.airline.find();
+
+      let paginatedAirlineData = [];
+      paginatedAirlineData = fetchedAirlineData;
+      paginatedAirlineData = paginatedAirlineData.slice(skip, skip + limit);
+      const totalPages: number = Math.ceil(fetchedAirlineData.length / limit);
+
+      // send paginated data
       response.status(200);
-      response.send(fetchedAirlineData);
+      response.json({
+        page: page,
+        limit: limit,
+        skip: skip,
+        totalPages: totalPages,
+        data: paginatedAirlineData,
+      });
     } catch (error) {
       response.status(404);
       response.send(error);
@@ -54,13 +98,16 @@ class AirlineController {
 
   private getAirlineById = async (
     request: express.Request,
-    response: express.Response
+    response: express.Response,
+    next: express.NextFunction
   ) => {
     const id = request.params.id;
     const fetchedAirlineDataById = await this.airline.findById(id);
     if (fetchedAirlineDataById) {
       response.status(200);
       response.send(fetchedAirlineDataById);
+    } else {
+      next(new HttpException(404, "Airline data was not found"));
     }
   };
 
